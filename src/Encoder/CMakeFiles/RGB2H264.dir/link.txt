@@ -1,0 +1,1 @@
+/usr/bin/c++    -O0 -Wall -g -ggdb    CMakeFiles/RGB2H264.dir/rgbToH264.cpp.o  -o RGB2H264  -L/mass/workspace/rtp_connect/src/Encoder/../../lib -rdynamic -lx264 -lavcodec -lavdevice -lavutil -lswscale -Wl,-rpath,/mass/workspace/rtp_connect/src/Encoder/../../lib 
