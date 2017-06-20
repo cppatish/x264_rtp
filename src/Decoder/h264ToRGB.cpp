@@ -80,7 +80,16 @@ void SaveAsBMP(AVFrame *pFrameRGB, int width, int height, int index, int bpp)
     fwrite(&bmpheader, sizeof(bmpheader), 1, fp);  
     fwrite(&bmpinfo, sizeof(bmpinfo), 1, fp);  
     //fwrite(pFrameRGB->data[0], width*height*bpp/8, 1, fp);  
-    fwrite(pFrameRGB->data[0], (width*bpp+31)/32*4*height, 1, fp);  
+    unsigned char* PTR = pFrameRGB->data[0];
+    int fixSize = (width*bpp+31)/32*4 - width*bpp/8;
+    unsigned char fixData = 0x00;
+    for (int i = 0; i < height; ++i) {
+        fwrite(PTR, width*bpp/8, 1, fp);  
+        for (int j=0; j<fixSize; ++j) {
+            fwrite(&fixData, 1, 1, fp); 
+        }
+        PTR += width*bpp/8;
+    }
     
     fclose(fp);  
 }
@@ -97,7 +106,6 @@ int Work_Save2BMP()
     AVPacket packet;  
     int frameFinished;  
     int PictureSize;  
-    int fixedWidth;
     uint8_t *outBuff;  
   
     //×¢²á±à½âÂëÆ÷  
@@ -153,7 +161,6 @@ int Work_Save2BMP()
     }  
     
     printf("pCodecCtx->width : %d, pCodecCtx->height : %d \n", pCodecCtx->width, pCodecCtx->height);  
-    fixedWidth = ((pCodecCtx->width + 3) / 4) * 4;
     // È·¶¨Í¼Æ¬³ß´ç  
     PictureSize = avpicture_get_size(AV_PIX_FMT_BGR24, pCodecCtx->width, pCodecCtx->height);  
     outBuff = (uint8_t*)av_malloc(PictureSize);  
