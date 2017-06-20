@@ -61,8 +61,9 @@ void SaveAsBMP(AVFrame *pFrameRGB, int width, int height, int index, int bpp)
     bmpheader.bfReserved1 = 0;  
     bmpheader.bfReserved2 = 0;  
     bmpheader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);  
-    bmpheader.bfSize = bmpheader.bfOffBits + width*height*bpp/8;  
-  
+    // bmpheader.bfSize = bmpheader.bfOffBits + width*height*bpp/8;  
+    bmpheader.bfSize = bmpheader.bfOffBits + (width*bpp+31)/32*4*height;  
+    
     bmpinfo.biSize = sizeof(BITMAPINFOHEADER);  
     bmpinfo.biWidth = width;  
     bmpinfo.biHeight = height;  
@@ -78,8 +79,9 @@ void SaveAsBMP(AVFrame *pFrameRGB, int width, int height, int index, int bpp)
   
     fwrite(&bmpheader, sizeof(bmpheader), 1, fp);  
     fwrite(&bmpinfo, sizeof(bmpinfo), 1, fp);  
-    fwrite(pFrameRGB->data[0], width*height*bpp/8, 1, fp);  
-  
+    //fwrite(pFrameRGB->data[0], width*height*bpp/8, 1, fp);  
+    fwrite(pFrameRGB->data[0], (width*bpp+31)/32*4*height, 1, fp);  
+    
     fclose(fp);  
 }
 
@@ -95,6 +97,7 @@ int Work_Save2BMP()
     AVPacket packet;  
     int frameFinished;  
     int PictureSize;  
+    int fixedWidth;
     uint8_t *outBuff;  
   
     //×¢²á±à½âÂëÆ÷  
@@ -150,6 +153,7 @@ int Work_Save2BMP()
     }  
     
     printf("pCodecCtx->width : %d, pCodecCtx->height : %d \n", pCodecCtx->width, pCodecCtx->height);  
+    fixedWidth = ((pCodecCtx->width + 3) / 4) * 4;
     // È·¶¨Í¼Æ¬³ß´ç  
     PictureSize = avpicture_get_size(AV_PIX_FMT_BGR24, pCodecCtx->width, pCodecCtx->height);  
     outBuff = (uint8_t*)av_malloc(PictureSize);  
@@ -160,10 +164,13 @@ int Work_Save2BMP()
     avpicture_fill((AVPicture *)pFrameRGB, outBuff, AV_PIX_FMT_BGR24, pCodecCtx->width, pCodecCtx->height);  
   
     //ÉèÖÃÍ¼Ïñ×ª»»ÉÏÏÂÎÄ  
-    pSwsCtx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,  
-        pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_BGR24,  
-        SWS_BICUBIC, NULL, NULL, NULL);  
-  
+    // pSwsCtx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,  
+    //    pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_BGR24,  
+    //    SWS_BICUBIC, NULL, NULL, NULL);  
+    pSwsCtx = sws_getContext(pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_YUV420P,
+          pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_BGR24,
+          SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    
     int i = 0;  
     while( av_read_frame(pFormatCtx, &packet) >= 0 ) {  
         if( packet.stream_index == videoStream ) {  
