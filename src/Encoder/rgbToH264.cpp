@@ -123,10 +123,10 @@ void Init_Encoder(U32 width, U32 height)
     param.i_frame_total = 0; //* 编码总帧数.不知道用0.  
     param.i_keyint_max = 10;   
     //* 流参数  
-    param.i_bframe  = 5;  
+    // param.i_bframe  = 5;  
     param.b_open_gop  = 0;  
-    param.i_bframe_pyramid = 0;  
-    param.i_bframe_adaptive = X264_B_ADAPT_TRELLIS;  
+    // param.i_bframe_pyramid = 0;  
+    // param.i_bframe_adaptive = X264_B_ADAPT_TRELLIS;  
     //* Log参数，不需要打印编码信息时直接注释掉就行  
     param.i_log_level  = X264_LOG_DEBUG;  
     //* 速率控制参数  
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     //     return -1; 
     // };
     U8 bitCountPerPix; 
-    const char* file_fat = "../pic/1280x720-%d.bmp";
+    const char* file_fat = "../../res/pic/1280x720-%d.bmp";
     char file_name[20];
     for (int i = 0; i < 30; ++i) {
         memset(file_name, 0, sizeof(file_name));
