@@ -61,8 +61,9 @@ void SaveAsBMP(AVFrame *pFrameRGB, int width, int height, int index, int bpp)
     bmpheader.bfReserved1 = 0;  
     bmpheader.bfReserved2 = 0;  
     bmpheader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);  
-    bmpheader.bfSize = bmpheader.bfOffBits + width*height*bpp/8;  
-  
+    // bmpheader.bfSize = bmpheader.bfOffBits + width*height*bpp/8;  
+    bmpheader.bfSize = bmpheader.bfOffBits + (width*bpp+31)/32*4*height;  
+    
     bmpinfo.biSize = sizeof(BITMAPINFOHEADER);  
     bmpinfo.biWidth = width;  
     bmpinfo.biHeight = height;  
@@ -78,8 +79,18 @@ void SaveAsBMP(AVFrame *pFrameRGB, int width, int height, int index, int bpp)
   
     fwrite(&bmpheader, sizeof(bmpheader), 1, fp);  
     fwrite(&bmpinfo, sizeof(bmpinfo), 1, fp);  
-    fwrite(pFrameRGB->data[0], width*height*bpp/8, 1, fp);  
-  
+    //fwrite(pFrameRGB->data[0], width*height*bpp/8, 1, fp);  
+    unsigned char* PTR = pFrameRGB->data[0];
+    int fixSize = (width*bpp+31)/32*4 - width*bpp/8;
+    unsigned char fixData = 0x00;
+    for (int i = 0; i < height; ++i) {
+        fwrite(PTR, width*bpp/8, 1, fp);  
+        for (int j=0; j<fixSize; ++j) {
+            fwrite(&fixData, 1, 1, fp); 
+        }
+        PTR += width*bpp/8;
+    }
+    
     fclose(fp);  
 }
 
@@ -160,10 +171,13 @@ int Work_Save2BMP()
     avpicture_fill((AVPicture *)pFrameRGB, outBuff, AV_PIX_FMT_BGR24, pCodecCtx->width, pCodecCtx->height);  
   
     //设置图像转换上下文  
-    pSwsCtx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,  
-        pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_BGR24,  
-        SWS_BICUBIC, NULL, NULL, NULL);  
-  
+    // pSwsCtx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,  
+    //    pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_BGR24,  
+    //    SWS_BICUBIC, NULL, NULL, NULL);  
+    pSwsCtx = sws_getContext(pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_YUV420P,
+          pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_BGR24,
+          SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    
     int i = 0;  
     while( av_read_frame(pFormatCtx, &packet) >= 0 ) {  
         if( packet.stream_index == videoStream ) {  
