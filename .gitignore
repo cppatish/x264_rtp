@@ -1,0 +1,14 @@
+.gitignore
+*.swn
+*.swo
+*.swp
+*.cpp~
+*.c~
+*.h~
+*.mp4
+*.yuv
+*.py
+*.pyc
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
