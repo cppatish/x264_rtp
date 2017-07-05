@@ -50,13 +50,16 @@ int main(void)
 
 	RTPUDPv4TransmissionParams transparams;
 	RTPSessionParams sessparams;
-	sessparams.SetOwnTimestampUnit(1.0/10.0);		
+	sessparams.SetOwnTimestampUnit(1.0/90000.0);		
 	
 	sessparams.SetAcceptOwnPackets(true);
 
 	transparams.SetPortbase(portbase);
+    transparams.SetRTPReceiveBuffer(512000);
+
 	status = sess.Create(sessparams,&transparams);	
 	checkerror(status);
+
 
 	sess.BeginDataAccess();
 	RTPTime delay(0.001);
@@ -70,7 +73,7 @@ int main(void)
 	int pos = 0;
 
     int file_size = 0;
-	
+	int loop = 0;
 	fd = fopen("./test_recv.h264","wb+");
 	while (!done)
 	{
@@ -83,15 +86,21 @@ int main(void)
 			{
 				while ((pack = sess.GetNextPacket()) != NULL)
 				{
-					
+					++loop;
+                    if (loop % 500 == 0) {
+                        printf("recvDataSize: %d, len: %d\n", loop, pack->GetPayloadLength());
+                    }
+
 					loaddata = pack->GetPayloadData();
 					len		 = pack->GetPayloadLength();
-
+                    int    seqNo = pack->GetSequenceNumber();
+                   // printf("packInfo(loadDataLen: %d, seqNo: %d)", len, seqNo);
                     if (pack->HasMarker()) {
-                        printf(">> rcv data size:%d [Y]\n", len);
+                       ///  printf(">> rcv data size:%d [Y]\n", len);
+                          
                     }
                     else {
-                        printf(">> rcv data size:%d [N]\n", len);
+                        // printf(">> rcv data size:%d [N]\n", len);
                     }
 					
 					if(pack->GetPayloadType() == 96) //H264
@@ -116,9 +125,9 @@ int main(void)
 #endif
 					}else
 					{
-						printf("!!!  GetPayloadType = %d !!!! \n ",pack->GetPayloadType());
+						// printf("!!!  GetPayloadType = %d !!!! \n ",pack->GetPayloadType());
 					}
-                    printf("Total rcv data size:%d\n", file_size);
+                    // printf("Total rcv data size:%d\n", file_size);
 
 					sess.DeletePacket(pack);
 				}
@@ -127,9 +136,9 @@ int main(void)
 		}
 				
 		RTPTime::Wait(delay);
-		RTPTime t = RTPTime::CurrentTime();
+        RTPTime t = RTPTime::CurrentTime();
 		t -= starttime;
-		if (t > RTPTime(40.0))
+		if (t > RTPTime(4000.0))
 			done = true;
 	}
 	fclose(fd);
@@ -137,7 +146,6 @@ int main(void)
 	
 	sess.EndDataAccess();
 	delay = RTPTime(10.0);
-	sess.BYEDestroy(delay,0,0);
-    
+    sess.BYEDestroy(delay,0,0);
 	return 0;
 }
